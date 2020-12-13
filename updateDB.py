@@ -21,7 +21,7 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-mypassw = "PowerMax300"
+mypassw =
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
