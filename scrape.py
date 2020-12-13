@@ -110,10 +110,10 @@ def scrapeData(vocab):
     ############################################################################################
     print('.....Scraping BBB.org')
     # press load more until reach end of the page
-    driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+    #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.bbb.org/us/nc/charlotte/profile/bank/bank-of-america-0473-100421/customer-reviews'
-    driver.implicitly_wait(5)
-    driver.maximize_window()
+    #driver.implicitly_wait(5)
+    #driver.maximize_window()
     driver.get(url)
 
     xpath = '/html/body/div[2]/div[2]/div/button'
@@ -176,11 +176,11 @@ def scrapeData(vocab):
     ############################################################################################
     print('.....Scraping DepositAccounts.com')
 
-    driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+    #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.depositaccounts.com/banks/bank-of-america.html'
 
-    driver.implicitly_wait(5)
-    driver.maximize_window()
+    #driver.implicitly_wait(5)
+    #driver.maximize_window()
     driver.get(url)
 
     readMoreClassName = 'textExpand'
@@ -234,11 +234,11 @@ def scrapeData(vocab):
     ############################################################################################
     print('.....Scraping ConsumerAffairs.com')
 
-    driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
+    #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.consumeraffairs.com/finance/bofa.html'
 
-    driver.implicitly_wait(5)
-    driver.maximize_window()
+    #driver.implicitly_wait(5)
+    #driver.maximize_window()
     driver.get(url)
 
     monthVocab = {'jan': 1, 'feb': 2, 'march':3 , 'april':4, 'may': 5, 'june':6, 'july':7 , 'aug':8, 'sept':9 ,'oct':10, 'nov': 11,'dec':12}
@@ -297,5 +297,5 @@ def scrapeData(vocab):
             print("No more pages left")
             break
     print('processed all pages')  
-
+    driver.quit()
     return df

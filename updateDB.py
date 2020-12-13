@@ -7,6 +7,7 @@
 # add scraped reviews to MongoDB
 # return True if success
 # return False if something failed
+from datetime import datetime
 import scrape
 import dns
 import pandas as pd
@@ -21,7 +22,7 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-mypassw =
+mypassw = 
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
@@ -39,9 +40,10 @@ def updateDB():
     publishers = ['trustpilot.com', 'bbb.org', 'depositaccounts.com','consumeraffairs.com']
     vocab = {}
     for source in publishers:
-        result = list(collection.find( { 'source': source } ).sort([("datestamp", -1)]).limit(1))
-        date = result[0]['datestamp']
-        #date = datetime.strptime(date, '%Y-%m-%d')
+        result = list(collection.find( { 'source': source } ).sort([("date", -1)]).limit(1))
+        date = str(result[0]['date'])[:10]
+        print('Look at me', date)
+        date = datetime.strptime(date, '%Y-%m-%d')
         vocab[source] = date 
         
     print('Retrieved list of dates of last retrieved reviews for each site')

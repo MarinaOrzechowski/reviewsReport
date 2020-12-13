@@ -35,7 +35,6 @@ Table of contents
     z-index: 1002;
 }*/
 
-
 /* Grid
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 .container {
@@ -44,7 +43,8 @@ Table of contents
     max-width: 960px;
     margin: 0 auto;
     padding: 0 20px;
-    box-sizing: border-box; }
+    box-sizing: border-box; 
+    background-color: '#F5F5F5';}
   .column,
   .columns {
     width: 100%;
@@ -72,7 +72,7 @@ Table of contents
     .one.column,
     .one.columns                    { width: 4.66666666667%; }
     .two.columns                    { width: 13.3333333333%; }
-    .three.columns                  { width: 22%;            }
+    .three.columns                  { width: 22%; background-color: 'F5F5F5'           }
     .four.columns                   { width: 30.6666666667%; }
     .five.columns                   { width: 39.3333333333%; }
     .six.columns                    { width: 48%;            }
@@ -129,13 +129,15 @@ Table of contents
   html is set to 62.5% so that all the REM measurements throughout Skeleton
   are based on 10px sizing. So basically 1.5rem = 15px :) */
   html {
-    font-size: 62.5%; }
+    font-size: 62.5%; 
+    background-color: '#F5F5F5';}
   body {
     font-size: 1.5em; /* currently ems cause chrome bug misinterpreting rems on body element */
     line-height: 1.6;
     font-weight: 400;
     font-family: "Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    color: rgb(50, 50, 50); }
+    color: '#F5F5F5'; 
+    background-color: '#F5F5F5';}
   
   
   /* Typography
