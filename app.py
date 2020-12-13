@@ -1,7 +1,3 @@
-
-# press request - > open window "In progress" and run it until requestReviews returns True
-# retrieve data from MongoDB into dataframe
-# filter out by date and product
 # import updateDB
 import dash
 import dash_table
@@ -19,11 +15,11 @@ import pymongo
 import pandas as pd
 from pymongo import MongoClient
 
-
 import numpy as np
 import pandas as pd
 
-
+#your MongoDb password here
+mypassw = 
 # prevent triggering of pandas chained assignment warning
 pd.options.mode.chained_assignment = None
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -33,20 +29,23 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets, meta_tags=[
 ])
 
 #connect to boaReviews database
-client = MongoClient("mongodb+srv://mishkice:PowerMax300@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
+client = MongoClient("mongodb+srv://mishkice:"+mypassw+"@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
 db = client["boaReviews"]
 collection = db["reviews"]
 df = pd.DataFrame(collection.find())
 del df['_id']
 df = df.sort_values(by=['date'], ascending=False)
+
+# add missing columns which are necessary for visualization
 df['count'] = 1
 df.insert(0, 'geoid', range(0, len(df)))
 columns = df.columns
 #df = df.dropna()
 df['rating'] = pd.to_numeric(df['rating'])
 df['date'] = df['date'].astype(str).str.slice(0,10)
-df['month'] = df['date'][5:7]
-df['day'] = df['date'][8:]
+df['month'] = df['date'].str[5:7]
+print(df.date)
+df['day'] = df['date'].str[8:]
 
 table_columns = ['date', 'name','rating','product', 'source', 'text', 'responded']
 table_df = df[table_columns]
@@ -60,12 +59,6 @@ colors = {
     'border': '#000000',
     'chart': ['#27496d', '#00909e', '#4d4c7d']
 }
-
-colorscale_by_boro = ['#e41a1c',
-                      '#377eb8',
-                      '#4daf4a',
-                      '#984ea3',
-                      '#ff7f00']
 
 ##############################################################################
 # parallel coordinates graph
@@ -243,20 +236,30 @@ app.layout = html.Div(
 # callbacks
 ####################################################################################
 # @app.callback(
-#     Output('scrapedData', 'data'),
+#     Output('scrapedData', 'children'),
 #     [
 #         Input("scrape_btn", "n_clicks")
 #     ])
 # def scrape_data(n_clicks):
 #     if n_clicks>0:
 #         updateDB.updateDB()
-#     client = MongoClient("mongodb+srv://mishkice:PowerMax300@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
+#     client = MongoClient("mongodb+srv://mishkice:"+mypassw+"@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
 #     db = client["boaReviews"]
 #     collection = db["reviews"]
 #     df = pd.DataFrame(collection.find())
 #     del df['_id']
 #     df = df.sort_values(by=['date'], ascending=False)
-#     return df.to_dict('records')
+
+    # # add missing columns which are necessary for visualization
+    # df['count'] = 1
+    # df.insert(0, 'geoid', range(0, len(df)))
+    # columns = df.columns
+    # #df = df.dropna()
+    # df['rating'] = pd.to_numeric(df['rating'])
+    # df['date'] = df['date'].astype(str).str.slice(0,10)
+    # df['month'] = df['date'].str[5:7]
+    # df['day'] = df['date'].str[8:]
+    # return df.to_dict('records')
 
 @app.callback(
         Output('table', 'data'),

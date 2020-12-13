@@ -21,14 +21,14 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-
+mypassw = "PowerMax300"
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
 def updateDB():
 
     #connect to boaReviews database
-    client = MongoClient("mongodb+srv://mishkice:PowerMax300@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
+    client = MongoClient("mongodb+srv://mishkice:"+mypassw+"@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
     db = client["boaReviews"]
     collection = db["reviews"]
     df = pd.DataFrame(collection.find())
@@ -122,7 +122,7 @@ def updateDB():
         x = collection.delete_many(delete_query)
 
     # insert new reviews
-    client = MongoClient("mongodb+srv://mishkice:PowerMax300@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
+    client = MongoClient("mongodb+srv://mishkice:"+mypassw+"@cluster0.t6imm.mongodb.net/boaReviews?retryWrites=true&w=majority")
     db = client["boaReviews"]
     collection = db["reviews"]
     x = collection.insert_many(df.to_dict('records'))
