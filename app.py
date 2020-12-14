@@ -23,7 +23,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=Warning)
 
 #your MongoDb password here
-mypassw = 'PowerMax300'
+mypassw = 
 # prevent triggering of pandas chained assignment warning
 pd.options.mode.chained_assignment = None
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -215,6 +215,21 @@ app.layout = html.Div(
 
         ],
             className='row'),
+        
+        # row with barcharts (prod - count, prod - average)
+        html.Div([
+            html.Div([
+                dcc.Graph(
+                    id='prod_count_barchart'
+                )
+            ], className='six columns'),
+            
+            html.Div([
+                dcc.Graph(
+                    id='avg_rating_barchart'
+                )
+            ], className='six columns')
+        ], className='row'),
 
         # row5 with parallel coord
         html.Div([
@@ -315,12 +330,114 @@ def toggle_modal(start_date, end_date, updated_df):
     if start_date:
         df_range = df_range[df_range['date'] >= start_date]
     if end_date:
-        df_range = df_range[df['date'] <= end_date]
+        df_range = df_range[df_range['date'] <= end_date]
     
     selected_ids = df_range['geoid']
     return selected_ids
 
+# update number and average ratings by products
+@app.callback(
+    Output('prod_count_barchart', 'figure'),
+    [Input('selectedReviews', 'children'),
+    Input('intermediate-value', 'children')]
+    )
+def display_selected_data(selected_reviews, updated_df):
+    if updated_df:
+        months_data = pd.read_json(updated_df, 'split')
+        months_data['date'] = months_data['date'].astype(str).str.slice(0,10)
+        months_data['month'] = months_data['date'].str[5:7].astype(int)
+        months_data['day'] = months_data['date'].str[8:].astype(int)
+    else:
+        months_data = df
+        months_data['month'] = months_data['month'].astype(int)
 
+    if selected_reviews and len(selected_reviews)>0:
+        months_data = months_data[months_data['geoid'].isin(selected_reviews)]
+
+
+    df_selected = months_data.groupby(["product","rating"])["rating"].count().reset_index(name='count')
+
+    # selected_months = set(df_selected['month'])
+    # fig = go.Figure()
+    # months = [month for month in range(0, 12)]
+    months_str = ['Jan', 'Feb', 'Mar', 'Apr', "May",
+                  'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    title = "<b>Number of Reviews by Product and Rating</b>"
+    # # some months didn't have reviews, so fill it with zeros
+    # for i in range(1,13):
+    #     if i not in selected_months:
+    #         df_selected = df_selected.append(
+    #             {'month': i, 'rating': 0}, ignore_index=True)
+
+    df_selected = df_selected.sort_values(by=['count'], ascending=False) 
+    # ratings = df_selected['rating']
+                    
+
+    fig=px.bar(df_selected, x = "product", y = "count", color = "rating", barmode = "stack")
+
+    fig.update_layout(yaxis_title='Number of reviews',
+                      plot_bgcolor=colors['background'],
+                      paper_bgcolor=colors['background'],
+                      title={
+                          'text': title,
+                          'x': 0.5,
+                          'xanchor': 'center'}
+                      )
+    return fig
+
+# update average ratings by products barchart
+@app.callback(
+    Output('avg_rating_barchart', 'figure'),
+    [Input('selectedReviews', 'children'),
+    Input('intermediate-value', 'children')]
+    )
+def display_selected_data(selected_reviews, updated_df):
+    if updated_df:
+        months_data = pd.read_json(updated_df, 'split')
+        months_data['date'] = months_data['date'].astype(str).str.slice(0,10)
+        months_data['month'] = months_data['date'].str[5:7].astype(int)
+        months_data['day'] = months_data['date'].str[8:].astype(int)
+    else:
+        months_data = df
+        months_data['month'] = months_data['month'].astype(int)
+
+    if selected_reviews and len(selected_reviews)>0:
+        months_data = months_data[months_data['geoid'].isin(selected_reviews)]
+
+
+    df_selected = months_data.groupby(['product']).agg(
+        {'rating':'mean'}).reset_index()
+
+    # selected_months = set(df_selected['month'])
+    # fig = go.Figure()
+    # months = [month for month in range(0, 12)]
+    months_str = ['Jan', 'Feb', 'Mar', 'Apr', "May",
+                  'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    title = "<b>Average Rating by Product</b>"
+    # # some months didn't have reviews, so fill it with zeros
+    # for i in range(1,13):
+    #     if i not in selected_months:
+    #         df_selected = df_selected.append(
+    #             {'month': i, 'rating': 0}, ignore_index=True)
+
+    df_selected = df_selected.sort_values(by=['rating'], ascending=False) 
+    # ratings = df_selected['rating']
+                    
+
+    fig=px.bar(df_selected, x = "product", y = "rating",color_discrete_sequence=px.colors.qualitative.Prism)
+
+    fig.update_layout(yaxis_title='Average Rating',
+                      
+                      plot_bgcolor=colors['background'],
+                      paper_bgcolor=colors['background'],
+                      title={
+                          'text': title,
+                          'x': 0.5,
+                          'xanchor': 'center'}
+                      )
+    return fig
 
 # update monthly representation of avg. ratings based on selected reviews
 @app.callback(
@@ -344,8 +461,6 @@ def display_selected_data(selected_reviews, updated_df):
 
     df_selected = months_data.groupby(['month']).agg(
         {'count': 'sum', 'rating':'mean'}).reset_index()
-# 2020-01-23
-# 0123456789
 
     selected_months = set(df_selected['month'])
     fig = go.Figure()

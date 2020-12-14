@@ -22,7 +22,7 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-mypassw = 'PowerMax300'
+mypassw = 
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
@@ -85,6 +85,11 @@ def updateDB():
         sentence = ' '.join(sentence)
         prediction = model.predict(vectorizer.transform([sentence]))[0]
         df.at[ind, 'product'] = prediction
+        if isinstance(row['name'],list):
+            name_temp = row['name'][0]
+            df.at[ind, 'name'] = name_temp
+        else:
+            name_temp = row['name']    
 
         prodVocab = {
             "business service":'Bank of America Business Services',
@@ -107,7 +112,7 @@ def updateDB():
             if row.text.find(keyword) != -1:
                 df["product"][ind] = prodVocab[keyword]
         # predict gender from name
-        name = row['name'].split(" ")[0].lower().capitalize()
+        name = name_temp.split(" ")[0].lower().capitalize()
         gender = namesVocab[d.get_gender(name)]    
         df.at[ind,'gender'] = gender
 
