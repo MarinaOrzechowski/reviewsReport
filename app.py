@@ -19,8 +19,11 @@ import base64
 import numpy as np
 import pandas as pd
 
+import warnings
+warnings.simplefilter(action='ignore', category=Warning)
+
 #your MongoDb password here
-mypassw = 
+mypassw = 'PowerMax300'
 # prevent triggering of pandas chained assignment warning
 pd.options.mode.chained_assignment = None
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -34,6 +37,7 @@ client = MongoClient("mongodb+srv://mishkice:"+mypassw+"@cluster0.t6imm.mongodb.
 db = client["boaReviews"]
 collection = db["reviews"]
 df = pd.DataFrame(collection.find())
+client.close()
 del df['_id']
 df['date'] = df['date'].astype(str).str.slice(0,10)
 df = df.sort_values(by=['date'], ascending=False)
@@ -255,6 +259,7 @@ def get_recently_scraped_data(n_clicks):
         db = client["boaReviews"]
         collection = db["reviews"]
         df_new = pd.DataFrame(collection.find())
+        client.close()
         del df_new['_id']
         df_new['date'] = df_new['date'].astype(str).str.slice(0,10)
         df_new = df_new.sort_values(by=['date'], ascending=False)
@@ -269,7 +274,7 @@ def get_recently_scraped_data(n_clicks):
         df_new['month'] = df_new['date'].str[5:7]
         df_new['day'] = df_new['date'].str[8:]
 
-        return df_new.to_json('split')
+        return df_new.to_json(orient='split')
     else:
         return None
 
@@ -287,6 +292,7 @@ def filter_table(review_ids, updated_df):
         df_table['day'] = df_table['date'].str[8:]
     else:
         df_table = df
+
     df_filtered_table = df_table[df_table['geoid'].isin(review_ids)]
     return df_filtered_table.to_dict('records')
 

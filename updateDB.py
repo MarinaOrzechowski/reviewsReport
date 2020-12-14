@@ -22,7 +22,7 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-mypassw =
+mypassw = 'PowerMax300'
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
@@ -33,6 +33,7 @@ def updateDB():
     db = client["boaReviews"]
     collection = db["reviews"]
     df = pd.DataFrame(collection.find())
+    
     del df['_id']
     print()
     print('Connected to database')
@@ -48,9 +49,9 @@ def updateDB():
         
     print('Retrieved list of dates of last retrieved reviews for each site')
 
-    
+    client.close()
     df = scrape.scrapeData(vocab)
-    #print(df.head())
+    print(df)
     ######################################################################################
     # Run data through the text classification model and fill out the 'product' field, gender
     ######################################################################################
@@ -101,10 +102,10 @@ def updateDB():
             'savings and cd':'Bank of America Savings & CDs' ,
             'customer service':'Bank of America Customer Service'
             }
-        for ind, row in df.iterrows():
-            for keyword in prodVocab.keys():
-                if row.text.find(keyword) != -1:
-                    df["product"][ind] = prodVocab[keyword]
+        
+        for keyword in prodVocab.keys():
+            if row.text.find(keyword) != -1:
+                df["product"][ind] = prodVocab[keyword]
         # predict gender from name
         name = row['name'].split(" ")[0].lower().capitalize()
         gender = namesVocab[d.get_gender(name)]    
@@ -113,7 +114,8 @@ def updateDB():
         # add weekday field
         date = pd.Timestamp(row['date'])
         df.at[ind, 'weekday'] = date.dayofweek
-
+        
+    print(df)
     ######################################################################################
     # Add scraped reviews to MongoDB
     ######################################################################################
@@ -128,5 +130,6 @@ def updateDB():
     db = client["boaReviews"]
     collection = db["reviews"]
     x = collection.insert_many(df.to_dict('records'))
+    client.close()
     print('done')
     
