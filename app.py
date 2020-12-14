@@ -3,7 +3,7 @@ import dash
 import dash_table
 import dash_core_components as dcc
 import dash_daq as daq
-#import dash_bootstrap_components as dbc
+import dash_bootstrap_components as dbc
 import dash_html_components as html
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -47,12 +47,10 @@ df['rating'] = pd.to_numeric(df['rating'])
 df['date'] = df['date'].astype(str).str.slice(0,10)
 df['month'] = df['date'].str[5:7]
 df['day'] = df['date'].str[8:]
+df = df[df.weekday != '']
 
 table_columns = ['date', 'name','rating','product', 'source', 'text', 'responded']
 table_df = df[table_columns]
-
-image_filename = 'assets\WordCount.jpeg' 
-encoded_image = base64.b64encode(open(image_filename, 'rb').read())
 
 # fixme
 colors = {
@@ -74,7 +72,6 @@ app.layout = html.Div(
         # Hidden divs (to store data)
         html.Div(id='selectedReviews', style={'display': 'none'}),
         html.Div(id='intermediate-value', style={'display': 'none'}),
-        html.Div(id='isScraping', style={'display': 'none'}),
 
         # row1 with the header 
         html.Div([
@@ -90,27 +87,20 @@ app.layout = html.Div(
 
     # row2: button 'request reviews'
     html.Div([
-            html.Button('Scrape New Reviews', id='scrape_btn', n_clicks=0, style={'backgroundColor':'#32B2B2'})
+            html.Button('Scrape New Reviews', id='scrape_btn', n_clicks=0, style={'backgroundColor':'#32B2B2'}),
+            
+            dbc.Alert(
+                "This will take a few minutes. Please wait...",
+                id="alert-auto",
+                is_open=True,
+                duration=96000)
             ], 
+            
             style={
             'textAlign': 'center',
             'color': colors['text'],
             'paddingTop':'1%',
             'paddingBottom': '1%'
-        }, className='row'),
-
-    #row 3 with label "This will take a few minutes. Please wait..."
-    html.Div([
-            html.H5(
-                id='wait_text',
-                children='This might take a few minutes. Please wait...',
-                className='row')
-        ], style={
-            'display': 'block',
-            'textAlign': 'center',
-            'color': colors['text'],
-            # 'paddingTop':'1%',
-            # 'paddingBottom': '1%'
         }, className='row'),
 
 
@@ -201,7 +191,7 @@ app.layout = html.Div(
             className='row'),
 
         html.Div([
-            html.Img(src='data:image/png;base64,{}'.format(encoded_image))
+            html.Img(src=app.get_asset_url('WordCount.jpeg'))
         ]),
 
         # row 4 with monthly and daily avg.reviews
@@ -241,22 +231,14 @@ app.layout = html.Div(
 
 # show "please wait" text
 @app.callback(
-    Output('wait_text', 'style'),
-    [
-        Input("scrape_btn", "n_clicks"),
-        Input('intermediate-value', 'children')])
-def makeLabelVisible(n_clicks, updated):
-
-    if updated:
-        print('!!!done updating ')
-        return {'display': 'none'}
-    elif n_clicks>0:
-        print('!!!! updating now')
-        return {'display': 'block'}
-    else:
-        print('!!! didnt press btn yet')
-        return {'display': 'none'}
-
+    Output("alert-auto", "is_open"),
+    [Input("scrape_btn", "n_clicks")],
+    [State("alert-auto", "is_open")],
+)
+def toggle_alert(n, is_open):
+    if n:
+        return not is_open
+    return 
     
 
 # update dataset after scraping request
@@ -287,7 +269,7 @@ def get_recently_scraped_data(n_clicks):
         df_new['month'] = df_new['date'].str[5:7]
         df_new['day'] = df_new['date'].str[8:]
 
-        return df_new.to_json(orient='split')
+        return df_new.to_json('split')
     else:
         return None
 
@@ -299,7 +281,7 @@ def get_recently_scraped_data(n_clicks):
     ])
 def filter_table(review_ids, updated_df):
     if updated_df:
-        df_table = pd.read_json(updated_df, orient='split')
+        df_table = pd.read_json(updated_df, 'split')
         df_table['date'] = df_table['date'].astype(str).str.slice(0,10)
         df_table['month'] = df_table['date'].str[5:7]
         df_table['day'] = df_table['date'].str[8:]
@@ -317,7 +299,7 @@ def filter_table(review_ids, updated_df):
     ])
 def toggle_modal(start_date, end_date, updated_df):
     if updated_df:
-        df_range = pd.read_json(updated_df, orient='split')
+        df_range = pd.read_json(updated_df, 'split')
         df_range['date'] = df_range['date'].astype(str).str.slice(0,10)
         df_range['month'] = df_range['date'].str[5:7]
         df_range['day'] = df_range['date'].str[8:]
@@ -342,12 +324,13 @@ def toggle_modal(start_date, end_date, updated_df):
     )
 def display_selected_data(selected_reviews, updated_df):
     if updated_df:
-        months_data = pd.read_json(updated_df, orient='split')
+        months_data = pd.read_json(updated_df, 'split')
         months_data['date'] = months_data['date'].astype(str).str.slice(0,10)
-        months_data['month'] = months_data['date'].str[5:7]
-        months_data['day'] = months_data['date'].str[8:]
+        months_data['month'] = months_data['date'].str[5:7].astype(int)
+        months_data['day'] = months_data['date'].str[8:].astype(int)
     else:
         months_data = df
+        months_data['month'] = months_data['month'].astype(int)
 
     if selected_reviews and len(selected_reviews)>0:
         months_data = months_data[months_data['geoid'].isin(selected_reviews)]
@@ -355,22 +338,25 @@ def display_selected_data(selected_reviews, updated_df):
 
     df_selected = months_data.groupby(['month']).agg(
         {'count': 'sum', 'rating':'mean'}).reset_index()
+# 2020-01-23
+# 0123456789
 
+    selected_months = set(df_selected['month'])
     fig = go.Figure()
-    months = [month for month in range(1, 13)]
+    # months = [month for month in range(0, 12)]
     months_str = ['Jan', 'Feb', 'Mar', 'Apr', "May",
                   'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     title = "<b>Average Rating By Month</b>"
-
     # some months didn't have reviews, so fill it with zeros
-    for i in range(12):
-        if i+1 not in df_selected['month']:
+    for i in range(1,13):
+        if i not in selected_months:
             df_selected = df_selected.append(
-                {'month': i+1, 'rating': 0}, ignore_index=True)
+                {'month': i, 'rating': 0}, ignore_index=True)
 
-    ratings = [df_selected.iloc[i]['rating']
-                    for i in range(12)]
+    df_selected = df_selected.sort_values(by=['month']) 
+    ratings = df_selected['rating']
+                    
 
     fig.add_trace(go.Scatter(x=months_str, y=ratings,
                                 line=dict(width=0.5),
@@ -397,10 +383,11 @@ def display_selected_data(selected_reviews, updated_df):
     )
 def display_selected_data(selected_reviews, updated_df):
     if updated_df:
-        daily_data = pd.read_json(updated_df, orient='split')
+        daily_data = pd.read_json(updated_df, 'split')
         daily_data['date'] = daily_data['date'].astype(str).str.slice(0,10)
         daily_data['month'] = daily_data['date'].str[5:7]
         daily_data['day'] = daily_data['date'].str[8:]
+        daily_data['weekday'] = daily_data['weekday'].astype(int)
     else:
         daily_data = df
 
@@ -412,21 +399,21 @@ def display_selected_data(selected_reviews, updated_df):
         {'count': 'sum', 'rating':'mean'}).reset_index()
 
     fig = go.Figure()
-    days = [day for day in range(1, 8)]
-    months_str = ['Mon', 'Tue', 'Wed', 'Thu', "Fri", 'Sat', 'Sun']
-
+    days_str = ['Mon', 'Tue', 'Wed', 'Thu', "Fri", 'Sat', 'Sun']
+    selected_weekdays = set(df_selected['weekday'])
     title = "<b>Average Rating By Weekday</b>"
 
     # some days didn't have reviews, so fill it with zeros
-    for i in range(7):
-        if i not in df_selected['weekday']:
+    for i in range(1,8):
+        if i not in selected_weekdays:
             df_selected = df_selected.append(
                 {'weekday': i, 'rating': 0}, ignore_index=True)
 
+    df_selected = df_selected.sort_values(by=['weekday'])
     ratings = [df_selected.iloc[i]['rating']
                     for i in range(7)]
 
-    fig.add_trace(go.Scatter(x=months_str, y=ratings,
+    fig.add_trace(go.Scatter(x=days_str, y=ratings,
                                 line=dict(width=0.5),
                                 mode='lines+markers',
                                 name=str('avg. rating')))
@@ -454,7 +441,7 @@ def display_selected_data(selected_reviews, updated_df):
 def build_parallel_coord(selected_reviews, updated_df):
 
     if updated_df:
-        para_data = pd.read_json(updated_df, orient='split')
+        para_data = pd.read_json(updated_df, 'split')
         para_data['date'] = para_data['date'].astype(str).str.slice(0,10)
         para_data['month'] = para_data['date'].str[5:7]
         para_data['day'] = para_data['date'].str[8:]

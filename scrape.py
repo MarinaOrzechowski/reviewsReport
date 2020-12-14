@@ -18,12 +18,13 @@ import string
 
 def scrapeData(vocab):
     df = pd.DataFrame(columns=('name', 'date', 'rating', 'text', 'boaDate', 'boaText', 'source', 'responded', 'timeRetrieved', 'htmlId'))
-    print('Empty dataframe created')
+    #print('Empty dataframe created')
 
     ############################################################################################
     # TrustPilot
     ############################################################################################
-    print('.....Scraping TrustPilot.com')
+    print()
+    print('Scraping TrustPilot.com')
     driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.trustpilot.com/review/www.bankofamerica.com'
 
@@ -34,7 +35,7 @@ def scrapeData(vocab):
     xpath1 = '/html/body/div[4]/div[3]/div/div/div[3]/button'
     xpath2 = '/html/body/div[3]/a'
     # close accept cookies tab
-    driver.implicitly_wait(5)
+    #driver.implicitly_wait(5)
 
     # close Covid notification tab
     try:
@@ -57,7 +58,8 @@ def scrapeData(vocab):
     sleep(1)
     flag = True
     while flag:   
-        try:          
+        try:    
+            print('.....Scraping')      
             page_source = driver.page_source
             soup = BeautifulSoup(page_source, 'lxml')
 
@@ -70,7 +72,7 @@ def scrapeData(vocab):
                 date = datetime.strptime(date, '%Y-%m-%d')
                 #check if review was previously scraped
                 if date < vocab['trustpilot.com']:
-                    print('found matching review')
+                    print('.....Found matching review')
                     flag = False
                     break
                 else:
@@ -93,22 +95,24 @@ def scrapeData(vocab):
                 except  StaleElementReferenceException:
                     sleep(5)
                     WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, 'Next page'))).click()
-                print('.........Opened page', temp)
+                #print('.........Opened page', temp)
                 temp += 1
                 sleep(5)
             else: 
-                print('Done with Trustpilot.com')
+                print('Trustpilot.com - done scraping')
+                print()
+                print()
                 break
         except:
-            print("No more pages left")
+            #print("No more pages left")
             break
-    print('processed all pages')        
+    #print('processed all pages')        
 
 
     ############################################################################################
     # BBB.org
     ############################################################################################
-    print('.....Scraping BBB.org')
+    print('Scraping BBB.org')
     # press load more until reach end of the page
     #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.bbb.org/us/nc/charlotte/profile/bank/bank-of-america-0473-100421/customer-reviews'
@@ -134,15 +138,16 @@ def scrapeData(vocab):
             # load more reviews
             myElem = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR, css_selector)))
             myElem.click()
-            print('.........Loaded more reviews')
+            #print('.........Loaded more reviews')
             times -= 1
             sleep(5) # otherwise spinning circle blocks the button
         except TimeoutException:
-            print("Done loading reviews")
+            #print("Done loading reviews")
             break    
 
     page_source = driver.page_source
     soup = BeautifulSoup(page_source, 'lxml')
+    print('.....Scraping')
     for block in soup.find_all("div", class_='MuiGrid-root styles__Review-sc-1azxajg-0 fyMiFZ dtm-review MuiGrid-container'):
         stars = block.find_all(d='M259.3 17.8L194 150.2 47.9 171.5c-26.2 3.8-36.7 36.1-17.7 54.6l105.7 103-25 145.5c-4.5 26.3 23.2 46 46.4 33.7L288 439.6l130.7 68.7c23.2 12.2 50.9-7.4 46.4-33.7l-25-145.5 105.7-103c19-18.5 8.5-50.8-17.7-54.6L382 150.2 316.7 17.8c-11.7-23.6-45.6-23.9-57.4 0z')
         stars = len(stars)
@@ -163,7 +168,7 @@ def scrapeData(vocab):
         
         #check if review was previously scraped
         if date < vocab['bbb.org']:
-            print('found matching review')
+            print('.....Found matching reviews')
             flag = False
             break
         else:
@@ -171,10 +176,13 @@ def scrapeData(vocab):
             df = df.append({'name' : name , 'date' : date, 'rating': stars, 'text': review, 'boaDate': boaDate, \
                                     'boaText': boaText, 'source': 'bbb.org', 'timeRetrieved':timeRetrieved, \
                                     'htmlId': name+review[:10], 'responded':responded} , ignore_index=True) 
+    print('bbb.org - done scraping')
+    print()
+    print()
     ############################################################################################
     # DepositAccounts.com
     ############################################################################################
-    print('.....Scraping DepositAccounts.com')
+    print('Scraping DepositAccounts.com')
 
     #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.depositaccounts.com/banks/bank-of-america.html'
@@ -193,6 +201,7 @@ def scrapeData(vocab):
         print("Couldn't open all reviews page")
 
     sleep(5)
+    print('.....Scraping')
 
     # expand all reviews
     # more_buttons = driver.find_elements_by_class_name(readMoreClassName)
@@ -222,17 +231,20 @@ def scrapeData(vocab):
         timeRetrieved = datetime.now()
         htmlId = block.find('div', class_='bankReview').get('id')
         if date < vocab['depositaccounts.com']:
+            print('.....Found matching reviews')
             break
         else:
             df = df.append({'name' : name , 'date' : date, 'rating': stars, 'text': review, 'boaDate': None, \
                                     'boaText': None, 'source': 'depositaccounts.com', 'timeRetrieved':timeRetrieved, \
                                     'htmlId': htmlId, 'responded':False} , ignore_index=True) 
         
-
+    print('DepositAccounts.com - done scraping')
+    print()
+    print()
     ############################################################################################
     # ConsumerAffairs.com
     ############################################################################################
-    print('.....Scraping ConsumerAffairs.com')
+    print('Scraping ConsumerAffairs.com')
 
     #driver = webdriver.Firefox(executable_path=GeckoDriverManager().install())
     url = 'https://www.consumeraffairs.com/finance/bofa.html'
@@ -291,11 +303,14 @@ def scrapeData(vocab):
                 except  StaleElementReferenceException:
                     sleep(5)
                     WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, 'Next'))).click()
-                print('.........Opened next page', page)
+                #print('.........Opened next page', page)
                 page += 1
         except:
-            print("No more pages left")
+            print(".....Found matching reviews")
             break
-    print('processed all pages')  
-    driver.quit()
+    print('ConsumerAffairs.com - done scraping')  
+    print()
+    print('Scraping Completed')
+    print()
+
     return df

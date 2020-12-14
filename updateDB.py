@@ -22,7 +22,7 @@ d = gender.Detector()
 ######################################################################################
 # connect to MongoDB and retrieve last added reviews for each publisher
 ######################################################################################
-mypassw = 
+mypassw =
 
 # Scrapes publishers sites and adds new reviews to boaReviews database.
 # Does not return anything.
@@ -34,6 +34,7 @@ def updateDB():
     collection = db["reviews"]
     df = pd.DataFrame(collection.find())
     del df['_id']
+    print()
     print('Connected to database')
 
     # retrieve 
@@ -42,7 +43,6 @@ def updateDB():
     for source in publishers:
         result = list(collection.find( { 'source': source } ).sort([("date", -1)]).limit(1))
         date = str(result[0]['date'])[:10]
-        print('Look at me', date)
         date = datetime.strptime(date, '%Y-%m-%d')
         vocab[source] = date 
         
@@ -50,7 +50,7 @@ def updateDB():
 
     
     df = scrape.scrapeData(vocab)
-    print(df.head())
+    #print(df.head())
     ######################################################################################
     # Run data through the text classification model and fill out the 'product' field, gender
     ######################################################################################
